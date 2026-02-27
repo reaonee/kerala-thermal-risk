@@ -23,7 +23,7 @@ jobs:
 
       - name: Install R Packages
         run: |
-          Rscript -e "install.packages(c('sf', 'sp', 'surveillance', 'dplyr', 'tidyr', 'ggplot2', 'rsconnect'))"
+          Rscript -e "install.packages(c('sf', 'sp', 'spdep', 'surveillance', 'dplyr', 'tidyr', 'ggplot2', 'readr', 'lubridate', 'MODISTools'))"
 
       - name: Run Model Update
         run: |
