@@ -1,0 +1,25 @@
+# 1. Use a pre-built R environment that already has ggplot2, dplyr, and Shiny
+FROM rocker/shiny-verse:latest
+
+# 2. Install the heavy Linux spatial libraries required by the 'surveillance' package
+RUN apt-get update && apt-get install -y \
+    libgdal-dev \
+    libproj-dev \
+    libgeos-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Install the specific statistical packages your app needs
+RUN R -e "install.packages(c('surveillance', 'bslib'), repos='http://cran.rstudio.com/')"
+
+# 4. Set up the working directory inside the server
+WORKDIR /code
+
+# 5. Copy your local app files into the cloud server
+COPY app.R .
+COPY kerala_fire_model.RData .
+
+# 6. Expose the mandatory Hugging Face port
+EXPOSE 7860
+
+# 7. Command to boot the Shiny app when the server starts
+CMD ["R", "-e", "shiny::runApp('/code', host = '0.0.0.0', port = 7860)"]
