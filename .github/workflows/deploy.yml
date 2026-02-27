@@ -1,0 +1,45 @@
+name: Weekly Model Update and Deploy
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every Monday
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgdal-dev libproj-dev libgeos-dev libudunits2-dev libssl-dev libcurl4-openssl-dev
+
+      - name: Install R Packages
+        run: |
+          Rscript -e "install.packages(c('surveillance', 'dplyr', 'tidyr', 'ggplot2', 'rsconnect'))"
+
+      - name: Run Model Update
+        run: |
+          Rscript hhh4_fire_model.R
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # This command clones your HF Space, replaces the data file, and pushes it back
+          git config --global user.email "bot@github.com"
+          git config --global user.name "DataBot"
+          git clone https://huggingface.co/spaces/reaone/kerala-thermal-risk hf_space
+          cp kerala_fire_model.RData hf_space/
+          cp app.R hf_space/
+          cd hf_space
+          git add .
+          git commit -m "Weekly automated data update" || echo "No changes to commit"
+          git push https://reaone:$HF_TOKEN@huggingface.co/spaces/reaone/kerala-thermal-risk main
