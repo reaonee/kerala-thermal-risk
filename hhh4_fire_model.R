@@ -189,8 +189,8 @@ fire_sts <- sts(
 # 5. Visual Verification of the Engine
 # This will generate a massive plot showing the timeline of fires for every single district
 #plot(fire_sts, type = observed ~ time | unit, 
-     ylab = "Fire Intensity (Count)", 
-     main = "Kerala Spatiotemporal Fire Dynamics (2021-2025)")
+#    ylab = "Fire Intensity (Count)", 
+#    main = "Kerala Spatiotemporal Fire Dynamics (2021-2025)")
 
 print("STS Object successfully compiled. The foundation is complete.")
 
@@ -451,5 +451,6 @@ summary(fire_model_FINAL)
 print("Saving the entire mathematical environment...")
 save.image("kerala_fire_model.RData")
 print("SUCCESS: kerala_fire_model.RData has been created in your project folder.")
+
 
 
