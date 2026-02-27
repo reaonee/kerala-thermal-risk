@@ -5,7 +5,7 @@ library(dplyr)
 library(spdep)
 
 # 1. Set directory and load the massive India map
-setwd("D:/icti/fire")
+
 india_map <- st_read("Kerala_github/2011_Dist.shp")
 
 # 2. Transform the whole map to UTM Zone 43N first (so the math is flat)
@@ -22,7 +22,7 @@ kerala_only <- kerala_only %>%
   mutate(Region_ID = row_number())
 
 # 5. Verify the foundation visually
-plot(st_geometry(kerala_only), main = "Actual Kerala Spatial Framework (UTM 43N)")
+#plot(st_geometry(kerala_only), main = "Actual Kerala Spatial Framework (UTM 43N)")
 
 # 6. Print the column names so we know exactly what the district column is called
 print(names(kerala_only))
@@ -31,44 +31,54 @@ print(names(kerala_only))
 
 
 # --- MASTER SCRIPT: STEP 2 (IGNITION COUNTS AND SPATIAL JOIN) ---
-install.packages(c('readr', 'lubridate'))
 library(readr)
 library(lubridate)
+library(dplyr)
+library(sf)
 
-# 1. Automatically find all CSV files inside your NASA folder and subfolders
-nasa_files <- list.files(path = "NASA", pattern = "\\.csv$", full.names = TRUE, recursive = TRUE)
-print("Found these NASA files:")
-print(nasa_files)
+# 1. Load BOTH historical 5-year baselines from the GitHub root folder
+modis_history <- read_csv("modis_history.csv", show_col_types = FALSE) %>%
+  mutate(confidence = as.character(confidence))
 
-# 2. Read files and force the 'confidence' column to be text (character) so they stack perfectly
-fire_data_list <- lapply(nasa_files, function(file) {
-  df <- read_csv(file, show_col_types = FALSE)
-  # Convert confidence to character immediately
-  df <- df %>% mutate(confidence = as.character(confidence))
-  return(df)
-})
+viirs_history <- read_csv("viirs_history.csv", show_col_types = FALSE) %>%
+  mutate(confidence = as.character(confidence))
 
-# Combine them all now that the columns match
-fire_data_raw <- bind_rows(fire_data_list)
+# Stitch them into one massive historical dataset
+historical_fires <- bind_rows(modis_history, viirs_history)
 
-# 3. Convert the raw Excel numbers into a spatial "sf" object
-# NASA gives data in WGS84 (EPSG:4326), so we define that first
+# 2. Fetch LIVE data from NASA FIRMS API (Last 7 Days for India)
+# The GitHub robot will securely inject your API key here
+nasa_key <- Sys.getenv("NASA_FIRMS_KEY")
+
+if(nasa_key == "") {
+  print("WARNING: NASA_FIRMS_KEY not found in server. Using only historical data.")
+  fire_data_raw <- historical_fires
+} else {
+  print("Fetching live fire data from NASA FIRMS API...")
+  api_url <- paste0("https://firms.modaps.eosdis.nasa.gov/api/country/csv/", nasa_key, "/VIIRS_SNPP_NRT/IND/7")
+  
+  # Try to download live data, but don't crash if the NASA server is temporarily down
+  live_fires <- tryCatch({
+    read_csv(api_url, show_col_types = FALSE) %>%
+      mutate(confidence = as.character(confidence))
+  }, error = function(e) {
+    print("API fetch failed. Defaulting to historical data only.")
+    return(data.frame())
+  })
+  
+  # 3. Stitch the historical data and the live data together
+  fire_data_raw <- bind_rows(historical_fires, live_fires) %>% distinct()
+}
+
+# 4. Convert the raw Excel numbers into a spatial "sf" object (WGS84 -> UTM 43N)
 fires_sf <- st_as_sf(fire_data_raw, coords = c("longitude", "latitude"), crs = 4326)
-
-# 4. Flatten the fire coordinates to UTM 43N so they perfectly match your Kerala map
 fires_sf <- st_transform(fires_sf, crs = 32643)
 
 # 5. The Spatial Join (Point-in-Polygon)
-# This forces every fire point to inherit the name of the district it fell inside
 fires_in_kerala <- st_join(fires_sf, kerala_only, join = st_intersects, left = FALSE)
 
-# 6. Visual Verification
-plot(st_geometry(kerala_only), main = "NASA Fires (MODIS + VIIRS) Inside Kerala")
-plot(st_geometry(fires_in_kerala), col = "red", pch = 20, cex = 0.5, add = TRUE)
-
-# 7. Print a quick summary of total fires caught inside the borders
+# 6. Print a quick summary of total fires caught inside the borders
 print(paste("Total verified fires inside Kerala boundaries:", nrow(fires_in_kerala)))
-
 
 
 
@@ -178,7 +188,7 @@ fire_sts <- sts(
 
 # 5. Visual Verification of the Engine
 # This will generate a massive plot showing the timeline of fires for every single district
-plot(fire_sts, type = observed ~ time | unit, 
+#plot(fire_sts, type = observed ~ time | unit, 
      ylab = "Fire Intensity (Count)", 
      main = "Kerala Spatiotemporal Fire Dynamics (2021-2025)")
 
@@ -239,9 +249,7 @@ print("Data Cleaned and Converted to Celsius. Preview:")
 print(head(lst_clean))
 
 
-# 5. Inspect and Export the Data
-# This will open a spreadsheet-like viewer inside R so you can scroll through the numbers
-View(lst_clean)
+
 
 # This will physically save the data as a CSV file into your D:/icti/fire folder
 library(readr)
@@ -405,6 +413,9 @@ model_control_final <- list(
   )
 )
 
+
+                               
+
 print("Running the Final Multivariate Maximum Likelihood Estimation...")
 
 # 2. Run the forced optimization
@@ -421,16 +432,16 @@ summary(fire_model_FINAL)
 # --- MASTER SCRIPT: STEP 11 (VISUALIZING THE PREDICTIVE ENGINE - FIXED) ---
 
 # 1. Plot the state-wide predicted vs observed fires (letting the package do its default rendering)
-plot(fire_model_FINAL, type = "fitted", total = TRUE)
+#plot(fire_model_FINAL, type = "fitted", total = TRUE)
 
 # Now we stamp the custom title on top of the finished plot
-title(main = "Kerala Forest Fires: Predicted Risk vs Actual Outbreaks (2021-2025)")
+#title(main = "Kerala Forest Fires: Predicted Risk vs Actual Outbreaks (2021-2025)")
 
 # 2. Plot the exact risk decomposition for a specific high-risk district like Wayanad
-plot(fire_model_FINAL, type = "fitted", units = "Wayanad")
+#plot(fire_model_FINAL, type = "fitted", units = "Wayanad")
 
 # Stamp the title for the district-specific plot
-title(main = "Wayanad: Environmental Endemic Risk vs Epidemic Spread")
+#title(main = "Wayanad: Environmental Endemic Risk vs Epidemic Spread")
 
 
 
@@ -440,4 +451,5 @@ title(main = "Wayanad: Environmental Endemic Risk vs Epidemic Spread")
 print("Saving the entire mathematical environment...")
 save.image("kerala_fire_model.RData")
 print("SUCCESS: kerala_fire_model.RData has been created in your project folder.")
+
 
