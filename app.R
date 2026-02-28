@@ -32,7 +32,7 @@ ui <- page_sidebar(
     uiOutput("stats_display"),
     hr(),
     
-    # Expandable Information Section to replace the report
+    
     accordion(
       accordion_panel(
         "1. The 1km Grid Rule (Data Source)",
@@ -49,10 +49,21 @@ ui <- page_sidebar(
     )
   ),
   
+  # TOP CARD 
   card(
     full_screen = TRUE,
     card_header(span(bsicons::bs_icon("layers"), " Deconstructed Thermal Risk Analysis")),
-    plotOutput("distPlot", height = "600px")
+    plotOutput("distPlot", height = "500px")
+  ),
+  
+  # BOTTOM SECTION 
+  accordion(
+    open = FALSE,
+    accordion_panel(
+      title = span(bsicons::bs_icon("info-circle"), " How to Read This Data"),
+      value = "instructions", 
+      uiOutput("plain_english_explanation")
+    )
   )
 )
 
@@ -131,6 +142,19 @@ server <- function(input, output) {
         plot.background = element_rect(fill = "#212529", color = NA),
         panel.background = element_rect(fill = "#212529", color = NA)
       )
+  })
+  
+  output$plain_english_explanation <- renderUI({
+    current_area <- input$selected_unit
+    
+    HTML(paste0(
+      "<p>This graph breaks down the exact environmental and mathematical drivers of forest fires for <b>", current_area, "</b>.</p>",
+      "<p><b>The White Dots:</b> These are the actual, physical thermal anomalies detected by NASA's VIIRS and MODIS satellites.</p>",
+      "<p><b>The Grey Area (Endemic Risk):</b> This is the baseline environmental threat. It rises when the land surface temperature spikes and local vegetation dries out. When this is high, the region is a powder keg waiting for a spark.</p>",
+      "<p><b>The Blue Area (Autoregressive Spread):</b> This represents localized fire persistence. If a fire started here last week, the blue spike shows the mathematical probability of it continuing to burn and igniting nearby dry fuel.</p>",
+      "<p><b>The Orange Area (Spatiotemporal Spillover):</b> This is the border threat. This represents fires actively crossing over from neighboring districts into this area.</p>",
+      "<p><b>The Bottom Line:</b> If the blue or orange areas are peaking, you are looking at an active, spreading outbreak. If the grey area is high but there are no white dots, the environment is critically dry but an ignition source has not yet triggered an event.</p>"
+    ))
   })
 }
 
