@@ -124,7 +124,7 @@ server <- function(input, output) {
       geom_area(data = df_long, aes(x = Date, y = Risk, fill = Component), alpha = 0.8) +
       geom_point(data = df, aes(x = Date, y = Observed), color = "white", size = 1.2, alpha = 0.7) +
       scale_fill_manual(values = c(
-        "Endemic" = "grey50", 
+        "Endemic" = "#FF0000", 
         "Autoregressive" = "#0055ff", 
         "Spatiotemporal" = "#ff8c00"
       )) +
@@ -159,3 +159,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
+
