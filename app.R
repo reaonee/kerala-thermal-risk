@@ -148,10 +148,10 @@ server <- function(input, output) {
     current_area <- input$selected_unit
     
     HTML(paste0(
-      "<p>This graph breaks down the exact environmental and mathematical drivers of forest fires for <b>", current_area, "</b>.</p>",
+      "<p>This graph breaks down the estimated environmental and mathematical drivers of thermal anomalies for <b>", current_area, "</b>.</p>",
       "<p><b>The White Dots:</b> These are the actual, physical thermal anomalies detected by NASA's VIIRS and MODIS satellites.</p>",
       "<p><b>The Grey Area (Endemic Risk):</b> This is the baseline environmental threat. It rises when the land surface temperature spikes and local vegetation dries out. When this is high, the region is a powder keg waiting for a spark.</p>",
-      "<p><b>The Blue Area (Autoregressive Spread):</b> This represents localized fire persistence. If a fire started here last week, the blue spike shows the mathematical probability of it continuing to burn and igniting nearby dry fuel.</p>",
+      "<p><b>The Blue Area (Autoregressive Spread):</b> This represents localized fire persistence. If a fire started here last week, the blue spike shows the estimated risk of the event continuing to burn and igniting nearby dry fuel.</p>",
       "<p><b>The Orange Area (Spatiotemporal Spillover):</b> This is the border threat. This represents fires actively crossing over from neighboring districts into this area.</p>",
       "<p><b>The Bottom Line:</b> If the blue or orange areas are peaking, you are looking at an active, spreading outbreak. If the grey area is high but there are no white dots, the environment is critically dry but an ignition source has not yet triggered an event.</p>"
     ))
@@ -159,4 +159,5 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
+
 
