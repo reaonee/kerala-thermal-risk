@@ -121,14 +121,18 @@ fire_counts <- fires_dedup %>%
 
 # 5. Build the strict 5-year timeline (The Zero-Fill)
 # 5 years * 52 weeks = 260 weeks. 260 weeks * 14 districts = 3640 rows.
+current_year <- as.numeric(format(Sys.Date(), "%Y"))
+
 all_weeks <- expand_grid(
   DISTRICT = unique(kerala_only$DISTRICT),
-  Year = 2021:2025,
+  Year = 2021:current_year, # <-- Now it automatically includes 2026
   Week = 1:52
 ) %>%
   mutate(YearWeek = paste0(Year, "-W", sprintf("%02d", Week))) %>%
   # Join with the Region IDs so the matrix stays organized
   left_join(st_drop_geometry(kerala_only) %>% select(DISTRICT, Region_ID), by = "DISTRICT")
+
+                               
 
 # 6. Merge the actual fire counts into the blank calendar
 final_matrix <- all_weeks %>%
@@ -225,12 +229,14 @@ print(api_targets)
 # 3. Execute the API call for 5 Years of Land Surface Temperature (MOD11A2)
 print("Pinging NASA ORNL Server for 5 years of LST data... This will take a minute. Do not interrupt R.")
 
+current_date <- as.character(Sys.Date())
+
 lst_data <- mt_batch_subset(
   df = api_targets,
   product = "MOD11A2",
   band = "LST_Day_1km",
   start = "2021-01-01",
-  end = "2025-12-31",
+  end = current_date,  # <-- This makes it dynamically pull up to today
   internal = TRUE
 )
 
@@ -341,7 +347,7 @@ ndvi_data <- mt_batch_subset(
   product = "MOD13Q1",
   band = "250m_16_days_NDVI",
   start = "2021-01-01",
-  end = "2025-12-31",
+  end = current_date,
   internal = TRUE
 )
 
@@ -451,6 +457,7 @@ summary(fire_model_FINAL)
 print("Saving the entire mathematical environment...")
 save.image("kerala_fire_model.RData")
 print("SUCCESS: kerala_fire_model.RData has been created in your project folder.")
+
 
 
 
