@@ -40,6 +40,15 @@ jobs:
           cp kerala_fire_model.RData hf_space/
           cp app.R hf_space/
           cd hf_space
+
+
+          - name: Commit and push generated RData file
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add kerala_fire_model.RData
+          git commit -m "Auto-update model predictions with latest NASA data" || echo "No changes to commit"
+          git push
           git add .
           git commit -m "Weekly automated data update" || echo "No changes to commit"
           git push https://reaone:$HF_TOKEN@huggingface.co/spaces/reaone/kerala-thermal-risk main
