@@ -6,6 +6,9 @@ on:
     - cron: '0 0 * * 1'
   workflow_dispatch: # Allows you to run it manually for testing
 
+permissions:
+  contents: write # CRITICAL: Allows the bot to save files back to your GitHub repo
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -29,26 +32,26 @@ jobs:
         run: |
           Rscript hhh4_fire_model.R
 
+      - name: Commit back to GitHub
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add kerala_fire_model.RData
+          git commit -m "Auto-update model predictions" || echo "No changes to commit"
+          git push
+
       - name: Push to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # This command clones your HF Space, replaces the data file, and pushes it back
           git config --global user.email "bot@github.com"
           git config --global user.name "DataBot"
-          git clone https://huggingface.co/spaces/reaone/kerala-thermal-risk hf_space
+          # Clone the space using the authentication token
+          git clone https://oauth2:${HF_TOKEN}@huggingface.co/spaces/reaone/kerala-thermal-risk hf_space
           cp kerala_fire_model.RData hf_space/
           cp app.R hf_space/
           cd hf_space
-
-
-          - name: Commit and push generated RData file
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add kerala_fire_model.RData
-          git commit -m "Auto-update model predictions with latest NASA data" || echo "No changes to commit"
-          git push
           git add .
-          git commit -m "Weekly automated data update" || echo "No changes to commit"
-          git push https://reaone:$HF_TOKEN@huggingface.co/spaces/reaone/kerala-thermal-risk main
+          git commit -m "Automated update from GitHub Actions" || echo "No changes to commit"
+          # Physically push the data to Hugging Face
+          git push https://oauth2:${HF_TOKEN}@huggingface.co/spaces/reaone/kerala-thermal-risk main
