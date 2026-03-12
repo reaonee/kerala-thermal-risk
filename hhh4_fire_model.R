@@ -121,15 +121,17 @@ fire_counts <- fires_dedup %>%
 
 # 5. Build the strict 5-year timeline (The Zero-Fill)
 # 5 years * 52 weeks = 260 weeks. 260 weeks * 14 districts = 3640 rows.
+
 current_year <- as.numeric(format(Sys.Date(), "%Y"))
+current_week <- isoweek(Sys.Date())
 
 all_weeks <- expand_grid(
   DISTRICT = unique(kerala_only$DISTRICT),
-  Year = 2021:current_year, # <-- Now it automatically includes 2026
+  Year = 2021:current_year,
   Week = 1:52
 ) %>%
+  filter(!(Year == current_year & Week > current_week)) %>%
   mutate(YearWeek = paste0(Year, "-W", sprintf("%02d", Week))) %>%
-  # Join with the Region IDs so the matrix stays organized
   left_join(st_drop_geometry(kerala_only) %>% select(DISTRICT, Region_ID), by = "DISTRICT")
 
                                
@@ -457,6 +459,7 @@ summary(fire_model_FINAL)
 print("Saving the entire mathematical environment...")
 save.image("kerala_fire_model.RData")
 print("SUCCESS: kerala_fire_model.RData has been created in your project folder.")
+
 
 
 
